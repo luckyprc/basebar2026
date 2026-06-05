@@ -9,23 +9,17 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: gh-pages
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Fetch from HF
         run: |
-          curl -sL --max-time 60             https://zhouzhouqingdao-basebar.hf.space/sub > sub.txt.new
+          curl -sL --max-time 60 \
+            https://zhouzhouqingdao-basebar.hf.space/sub > sub.txt
 
           # 验证：非空且包含协议链接
-          if grep -qE "^(vmess|vless|trojan|ss)://" sub.txt.new; then
-            echo "HF OK, $(wc -l < sub.txt.new) lines"
-          else
-            echo "HF failed or empty, keeping last known good"
-            cp gh-pages/sub.txt sub.txt.new 2>/dev/null || echo "# empty" > sub.txt.new
+          if ! grep -qE "^(vmess|vless|trojan|ss)://" sub.txt; then
+            echo "HF empty or invalid, workflow will fail"
+            exit 1
           fi
+          echo "HF OK, $(wc -l < sub.txt) lines"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -33,4 +27,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
           publish_branch: gh-pages
-          keep_files: true
+          # 只推送 sub.txt，避免把仓库其他文件也带过去
+          keep_files: false
