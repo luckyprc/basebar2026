@@ -11,7 +11,11 @@ jobs:
     steps:
       - name: Fetch from HF
         run: |
-          curl -sL --max-time 60             https://zhouzhouqingdao-basebar.hf.space/sub > sub.txt
+          curl -sL --max-time 60 \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+            -H "Accept: text/plain,*/*" \
+            -H "Accept-Language: en-US,en;q=0.9" \
+            https://zhouzhouqingdao-basebar.hf.space/sub > sub.txt
 
           # 验证：非空且包含协议链接（明文输出）
           if [ ! -s sub.txt ]; then
@@ -22,7 +26,7 @@ jobs:
           if grep -qE "^(vmess|vless|trojan|ss)://" sub.txt; then
             echo "HF OK, $(wc -l < sub.txt) lines"
           else
-            echo "HF invalid content: $(head -c 200 sub.txt)"
+            echo "HF invalid content (likely blocked): $(head -c 300 sub.txt)"
             exit 1
           fi
 
