@@ -11,15 +11,20 @@ jobs:
     steps:
       - name: Fetch from HF
         run: |
-          curl -sL --max-time 60 \
-            https://zhouzhouqingdao-basebar.hf.space/sub > sub.txt
+          curl -sL --max-time 60             https://zhouzhouqingdao-basebar.hf.space/sub > sub.txt
 
-          # 验证：非空且包含协议链接
-          if ! grep -qE "^(vmess|vless|trojan|ss)://" sub.txt; then
-            echo "HF empty or invalid, workflow will fail"
+          # 验证：非空且包含协议链接（明文输出）
+          if [ ! -s sub.txt ]; then
+            echo "HF returned empty"
             exit 1
           fi
-          echo "HF OK, $(wc -l < sub.txt) lines"
+
+          if grep -qE "^(vmess|vless|trojan|ss)://" sub.txt; then
+            echo "HF OK, $(wc -l < sub.txt) lines"
+          else
+            echo "HF invalid content: $(head -c 200 sub.txt)"
+            exit 1
+          fi
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -27,5 +32,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
           publish_branch: gh-pages
-          # 只推送 sub.txt，避免把仓库其他文件也带过去
           keep_files: false
