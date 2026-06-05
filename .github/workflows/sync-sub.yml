@@ -1,0 +1,36 @@
+name: Sync Sub to Pages
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # 北京时间每天 09:00 (UTC+8)
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch from HF
+        run: |
+          curl -sL --max-time 60             https://zhouzhouqingdao-basebar.hf.space/sub > sub.txt.new
+
+          # 验证：非空且包含协议链接
+          if grep -qE "^(vmess|vless|trojan|ss)://" sub.txt.new; then
+            echo "HF OK, $(wc -l < sub.txt.new) lines"
+          else
+            echo "HF failed or empty, keeping last known good"
+            cp gh-pages/sub.txt sub.txt.new 2>/dev/null || echo "# empty" > sub.txt.new
+          fi
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+          keep_files: true
